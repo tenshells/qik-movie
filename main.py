@@ -6,7 +6,11 @@ from config import (
     OUTPUT_VIDEO,
     FPS,
     DURATION_PER_IMAGE,
-    SUPPORTED_IMAGE_FORMATS
+    SUPPORTED_IMAGE_FORMATS,
+    MAX_IMAGES,
+    TARGET_WIDTH,
+    TARGET_HEIGHT,
+    WATCH_DIRECTORY
 )
 from directory_watcher import DirectoryWatcher
 import time
@@ -55,9 +59,8 @@ def create_video_from_images(directory_watcher: DirectoryWatcher, output_video: 
         return False
 
     try:
-        # Determine the target size (use the size of the first image)
-        with Image.open(images[0]) as img:
-            target_size = img.size
+        # Use fixed dimensions from config
+        target_size = (TARGET_WIDTH, TARGET_HEIGHT)
 
         # Resize images to the target size
         resized_images = resize_images(images, target_size)
@@ -66,14 +69,27 @@ def create_video_from_images(directory_watcher: DirectoryWatcher, output_video: 
             print("\nNo images could be processed!")
             return False
 
-        # Create a video clip from the resized image sequence
-        clip = ImageSequenceClip(resized_images, fps=fps)
+        # Create a video clip from the resized image sequence with specified duration
+        clip = ImageSequenceClip(resized_images, fps=fps, durations=[duration_per_image] * len(resized_images))
 
-        # Adjust the duration if specified
-        clip = clip.set_duration(duration_per_image * len(resized_images))
-
-        # Write the video file
-        clip.write_videofile(output_video, codec="libx264")
+        # Write the video file with specific parameters for better compatibility
+        clip.write_videofile(
+            output_video,
+            codec='libx264',
+            audio=False,
+            fps=fps,
+            preset='medium',
+            threads=4,
+            ffmpeg_params=['-pix_fmt', 'yuv420p']
+        )
+        
+        # Clean up temporary resized images
+        for img_path in resized_images:
+            try:
+                os.remove(img_path)
+            except Exception as e:
+                print(f"Warning: Could not remove temporary file {img_path}: {str(e)}")
+                
         return True
         
     except Exception as e:
@@ -82,8 +98,8 @@ def create_video_from_images(directory_watcher: DirectoryWatcher, output_video: 
 
 if __name__ == "__main__":
     try:
-        # Initialize the directory watcher
-        watcher = DirectoryWatcher(INPUT_IMG_FOLDER, SUPPORTED_IMAGE_FORMATS)
+        # Initialize the directory watcher with maximum image limit
+        watcher = DirectoryWatcher(INPUT_IMG_FOLDER, SUPPORTED_IMAGE_FORMATS, MAX_IMAGES)
         
         # Print initial directory information with duration
         watcher.print_directory_info(DURATION_PER_IMAGE)
@@ -93,21 +109,26 @@ if __name__ == "__main__":
             print("\nInitial video creation failed. Please check the directory contents and try again.")
             sys.exit(1)
         
-        print("\nWatching for changes...")
-        print("Press Ctrl+C to exit")
-        
-        while True:
-            # Check for changes every 5 seconds
-            has_changes, _ = watcher.check_for_changes()
+        # Only continue watching if enabled in config
+        if WATCH_DIRECTORY:
+            print("\nWatching for changes...")
+            print("Press Ctrl+C to exit")
             
-            if has_changes:
-                print("Regenerating video due to changes...")
-                if create_video_from_images(watcher, OUTPUT_VIDEO, FPS, DURATION_PER_IMAGE):
-                    print("Video regeneration complete!")
-                else:
-                    print("Video regeneration failed!")
-            
-            time.sleep(5)  # Wait 5 seconds before next check
+            while True:
+                # Check for changes every 5 seconds
+                has_changes, _ = watcher.check_for_changes()
+                
+                if has_changes:
+                    print("Regenerating video due to changes...")
+                    if create_video_from_images(watcher, OUTPUT_VIDEO, FPS, DURATION_PER_IMAGE):
+                        print("Video regeneration complete!")
+                    else:
+                        print("Video regeneration failed!")
+                
+                time.sleep(5)  # Wait 5 seconds before next check
+        else:
+            print("\nVideo creation complete!")
+            print(f"Output saved to: {OUTPUT_VIDEO}")
             
     except KeyboardInterrupt:
         print("\nExiting...")
