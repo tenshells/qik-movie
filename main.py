@@ -15,10 +15,27 @@ from config import (
 from directory_watcher import DirectoryWatcher
 import time
 import sys
+import shutil
+
+def ensure_resized_folder():
+    """Create a folder for resized images if it doesn't exist."""
+    resized_folder = os.path.join(os.path.dirname(INPUT_IMG_FOLDER), "resized_images")
+    if os.path.exists(resized_folder):
+        # Clear existing files in the folder
+        for file in os.listdir(resized_folder):
+            file_path = os.path.join(resized_folder, file)
+            try:
+                if os.path.isfile(file_path):
+                    os.unlink(file_path)
+            except Exception as e:
+                print(f"Warning: Could not delete {file_path}: {str(e)}")
+    else:
+        os.makedirs(resized_folder)
+    return resized_folder
 
 def resize_images(image_paths, target_size):
     """
-    Resizes all images to the target size.
+    Resizes all images to the target size and saves them in a dedicated folder.
 
     Parameters:
     - image_paths: List of image file paths.
@@ -27,14 +44,35 @@ def resize_images(image_paths, target_size):
     Returns:
     - List of paths to resized images.
     """
+    resized_folder = ensure_resized_folder()
     resized_images = []
+    
     for img_path in image_paths:
         try:
             with Image.open(img_path) as img:
-                resized_img = img.resize(target_size, Image.LANCZOS)
-                resized_path = os.path.join(os.path.dirname(img_path), "resized_" + os.path.basename(img_path))
-                resized_img.save(resized_path)
-                resized_images.append(resized_path)
+                # Convert to RGB if necessary (for PNG with transparency)
+                if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                    img = img.convert('RGB')
+                
+                # Resize image maintaining aspect ratio
+                img.thumbnail(target_size, Image.LANCZOS)
+                
+                # Create a new image with the target size and black background
+                new_img = Image.new('RGB', target_size, (0, 0, 0))
+                
+                # Calculate position to paste the resized image (centered)
+                paste_x = (target_size[0] - img.size[0]) // 2
+                paste_y = (target_size[1] - img.size[1]) // 2
+                
+                # Paste the resized image onto the new image
+                new_img.paste(img, (paste_x, paste_y))
+                
+                # Save to the resized folder
+                output_filename = f"resized_{os.path.basename(img_path)}"
+                output_path = os.path.join(resized_folder, output_filename)
+                new_img.save(output_path, quality=95)
+                resized_images.append(output_path)
+                
         except Exception as e:
             print(f"Warning: Could not process image {img_path}: {str(e)}")
     
@@ -83,13 +121,6 @@ def create_video_from_images(directory_watcher: DirectoryWatcher, output_video: 
             ffmpeg_params=['-pix_fmt', 'yuv420p']
         )
         
-        # Clean up temporary resized images
-        for img_path in resized_images:
-            try:
-                os.remove(img_path)
-            except Exception as e:
-                print(f"Warning: Could not remove temporary file {img_path}: {str(e)}")
-                
         return True
         
     except Exception as e:
