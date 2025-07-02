@@ -1,5 +1,4 @@
 import sys
-import time
 from config import (
     INPUT_IMG_FOLDER,
     OUTPUT_VIDEO,
@@ -8,72 +7,59 @@ from config import (
     SUPPORTED_IMAGE_FORMATS,
     MAX_IMAGES,
     TARGET_WIDTH,
-    TARGET_HEIGHT,
-    WATCH_DIRECTORY
+    TARGET_HEIGHT
 )
-from backend import DirectoryWatcher, ImageResizer, VideoCreator
+from backend import FolderManager, ImageResizer, VideoCreator
+
+def prompt_with_default(prompt, default, cast_func=str):
+    user_input = input(f"{prompt} [{default}]: ").strip()
+    if not user_input:
+        return default
+    try:
+        return cast_func(user_input)
+    except Exception:
+        print(f"Invalid input. Using default: {default}")
+        return default
 
 def main():
-    try:
-        # Initialize components
-        watcher = DirectoryWatcher(INPUT_IMG_FOLDER, SUPPORTED_IMAGE_FORMATS, MAX_IMAGES)
-        resizer = ImageResizer(TARGET_WIDTH, TARGET_HEIGHT)
-        video_creator = VideoCreator(FPS, DURATION_PER_IMAGE)
-        
-        # Print initial directory information
-        watcher.print_directory_info(DURATION_PER_IMAGE)
-        
-        # Get images and process them
-        images = watcher.get_image_files()
-        if not images:
-            print("\nNo images found in the directory!")
-            print("Please add some image files and try again.")
-            return False
-            
-        # Ensure resized folder exists and resize images
-        resizer.ensure_resized_folder(INPUT_IMG_FOLDER)
-        resized_images = resizer.resize_images(images)
-        
-        if not resized_images:
-            print("\nNo images could be processed!")
-            return False
-            
-        # Create the video
-        if not video_creator.create_video(resized_images, OUTPUT_VIDEO):
-            print("\nVideo creation failed. Please check the directory contents and try again.")
-            return False
-            
-        # Watch for changes if enabled
-        if WATCH_DIRECTORY:
-            print("\nWatching for changes...")
-            print("Press Ctrl+C to exit")
-            
-            while True:
-                has_changes, _ = watcher.check_for_changes()
-                
-                if has_changes:
-                    print("Regenerating video due to changes...")
-                    images = watcher.get_image_files()
-                    resized_images = resizer.resize_images(images)
-                    
-                    if resized_images and video_creator.create_video(resized_images, OUTPUT_VIDEO):
-                        print("Video regeneration complete!")
-                    else:
-                        print("Video regeneration failed!")
-                
-                time.sleep(5)
-        else:
-            print("\nVideo creation complete!")
-            print(f"Output saved to: {OUTPUT_VIDEO}")
-            
-    except KeyboardInterrupt:
-        print("\nExiting...")
-    except Exception as e:
-        print(f"\nError: {str(e)}")
-        return False
-        
-    return True
+    print("--- Qik Movie Video Creator ---\n")
+    img_folder = prompt_with_default("Input image folder", INPUT_IMG_FOLDER, str)
+    output_video = prompt_with_default("Output video file", OUTPUT_VIDEO, str)
+    fps = prompt_with_default("Frames per second (FPS)", FPS, float)
+    duration_per_image = prompt_with_default("Duration per image (seconds)", DURATION_PER_IMAGE, float)
+    max_images = prompt_with_default("Maximum number of images", MAX_IMAGES, int)
+    target_width = prompt_with_default("Target video width", TARGET_WIDTH, int)
+    target_height = prompt_with_default("Target video height", TARGET_HEIGHT, int)
+
+    # Show supported formats
+    print(f"Supported image formats: {', '.join(SUPPORTED_IMAGE_FORMATS)}")
+
+    # Initialize managers
+    folder = FolderManager(img_folder, SUPPORTED_IMAGE_FORMATS, max_images)
+    resizer = ImageResizer(target_width, target_height)
+    video_creator = VideoCreator(fps, duration_per_image)
+
+    # Get images
+    images = folder.get_image_files()
+    if not images:
+        print("No images found in the directory!")
+        sys.exit(1)
+    print(f"Found {len(images)} images.")
+
+    # Resize images
+    resizer.ensure_resized_folder(img_folder)
+    resized_images = resizer.resize_images(images)
+    if not resized_images:
+        print("No images could be processed!")
+        sys.exit(1)
+    print(f"Resized {len(resized_images)} images.")
+
+    # Create video
+    if video_creator.create_video(resized_images, output_video):
+        print(f"\nVideo created successfully: {output_video}")
+    else:
+        print("\nVideo creation failed.")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    success = main()
-    sys.exit(0 if success else 1)
+    main()

@@ -19,6 +19,7 @@ class VideoCreator:
         """
         try:
             # Create a video clip from the image sequence
+            print(f"Creating video with {len(image_paths)} images, each with duration {self.duration_per_image} seconds, {self.fps} fps")
             clip = ImageSequenceClip(
                 image_paths,
                 fps=self.fps,

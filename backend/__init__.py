@@ -1,5 +1,5 @@
 from .image_resizer import ImageResizer
 from .video_creator import VideoCreator
-from .directory_watcher import DirectoryWatcher
+from .folder_manager import FolderManager
 
-__all__ = ['ImageResizer', 'VideoCreator', 'DirectoryWatcher'] 
+__all__ = ['ImageResizer', 'VideoCreator', 'FolderManager'] 
