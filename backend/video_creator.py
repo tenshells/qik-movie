@@ -43,7 +43,7 @@ class VideoCreator:
             clip.write_videofile(
                 output_path,
                 codec='libx264',
-                audio=True if audio_path and os.path.isfile(audio_path) else False,
+                audio=True,
                 preset='medium',
                 threads=4,
                 ffmpeg_params=['-pix_fmt', 'yuv420p']
