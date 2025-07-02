@@ -3,7 +3,7 @@ INPUT_IMG_FOLDER = 'C:\\Users\\shelt\\Pictures\\10shells tests\\10shells tests\\
 OUTPUT_VIDEO = "output_video.mp4"
 
 # Video settings
-DURATION_PER_IMAGE = 0.01  # Duration each image will appear in the video (in seconds)
+DURATION_PER_IMAGE = 0.5  # Duration each image will appear in the video (in seconds)
 MAX_IMAGES = 11 #Maximum number of images to include in the video
 
 # Target video dimensions
