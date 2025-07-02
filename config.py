@@ -1,6 +1,7 @@
 # Input/Output paths
 INPUT_IMG_FOLDER = 'C:\\Users\\shelt\\Pictures\\10shells tests\\10shells tests\\lets showcase'
 OUTPUT_VIDEO = "output_video.mp4"
+AUDIO_PATH = "C:\\Users\\shelt\\Music\\Rap\\DaBaby - KIRK (2019)\\03. BOP.mp3"  # Default audio path
 
 # Video settings
 DURATION_PER_IMAGE = 0.5  # Duration each image will appear in the video (in seconds)

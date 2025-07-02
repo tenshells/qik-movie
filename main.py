@@ -2,6 +2,7 @@ import sys
 from config import (
     INPUT_IMG_FOLDER,
     OUTPUT_VIDEO,
+    AUDIO_PATH,
     DURATION_PER_IMAGE,
     SUPPORTED_IMAGE_FORMATS,
     MAX_IMAGES,
@@ -29,6 +30,7 @@ def main():
     print("--- Qik Movie Video Creator ---\n")
     img_folder = prompt_with_default("Input image folder", INPUT_IMG_FOLDER, str)
     output_video = prompt_with_default("Output video file", OUTPUT_VIDEO, str)
+    audio_path = prompt_with_default("Audio file path (mp3/wav)", AUDIO_PATH, str)
     duration_per_image = prompt_with_default("Duration per image (seconds)", DURATION_PER_IMAGE, float)
     max_images = prompt_with_default("Maximum number of images", MAX_IMAGES, int)
     target_width = prompt_with_default("Target video width", TARGET_WIDTH, int)
@@ -58,7 +60,7 @@ def main():
     print(f"Resized {len(resized_images)} images.")
 
     # Create video
-    if video_creator.create_video(resized_images, output_video):
+    if video_creator.create_video(resized_images, output_video, audio_path=audio_path):
         total_duration = len(resized_images) * duration_per_image
         print(f"\nVideo created successfully: {output_video}")
         print(f"Output duration: {format_duration(total_duration)}")
