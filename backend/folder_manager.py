@@ -1,9 +1,16 @@
 import os
 from typing import List, Tuple
 
+
 class FolderManager:
-    def __init__(self, directory: str, supported_image_formats: Tuple[str, ...], max_images: int = 100,
-                 supported_video_formats: Tuple[str, ...] = (), max_videos: int = 10):
+    def __init__(
+        self,
+        directory: str,
+        supported_image_formats: Tuple[str, ...],
+        max_images: int = 100,
+        supported_video_formats: Tuple[str, ...] = (),
+        max_videos: int = 10,
+    ):
         if not os.path.exists(directory):
             raise ValueError(f"Directory does not exist: {directory}")
         if not os.path.isdir(directory):
@@ -53,4 +60,4 @@ class FolderManager:
 
     def get_media_files(self) -> Tuple[List[str], List[str]]:
         """Return (image_files, video_files)"""
-        return self.get_image_files(), self.get_video_files() 
+        return self.get_image_files(), self.get_video_files()

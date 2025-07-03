@@ -14,5 +14,6 @@ dependencies = [
     "pillow==11.2.1",
     "proglog==0.1.12",
     "python-dotenv==1.1.0",
+    "ruff>=0.12.2",
     "tqdm==4.67.1",
 ]
