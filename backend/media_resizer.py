@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import List
 from PIL import Image
 from moviepy.video.io.VideoFileClip import VideoFileClip
 
